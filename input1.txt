@@ -1,0 +1,118 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Solution {
+    // Standard Disjoint Set (Union-Find) Helper
+    class DisjointSet {
+    public:
+        vector<int> parent, size;
+        int components; 
+        
+        DisjointSet(int n) {
+            parent.resize(n);
+            size.resize(n, 1);
+            components = n;
+            for (int i = 0; i < n; i++) parent[i] = i;
+        }
+
+        int findParent(int node) {
+            if (node == parent[node]) return node;
+            return parent[node] = findParent(parent[node]); 
+        }
+
+        bool unionBySize(int u, int v) {
+            int rootU = findParent(u);
+            int rootV = findParent(v);
+
+            if (rootU == rootV) return false; 
+
+            if (size[rootU] < size[rootV]) {
+                parent[rootU] = rootV;
+                size[rootV] += size[rootU];
+            } else {
+                parent[rootV] = rootU;
+                size[rootU] += size[rootV];
+            }
+            components--; 
+            return true;
+        }
+    };
+
+public:
+    vector<vector<int>> findCriticalAndPseudoCriticalEdges(int n, vector<vector<int>>& edges) {
+        int m = edges.size();
+        
+        // 1. Format: {weight, u, v, original_index} to preserve the index after sorting
+        vector<vector<int>> newEdges(m, vector<int>(4));
+        for (int i = 0; i < m; ++i) {
+            newEdges[i] = {edges[i][2], edges[i][0], edges[i][1], i};
+        }
+        
+        // Sort by weight (ascending)
+        sort(newEdges.begin(), newEdges.end());
+        
+        // 2. Find the Base MST Weight
+        int baseWeight = getMSTWeight(n, newEdges, -1, -1);
+        
+        vector<int> critical, pseudoCritical;
+        
+        // 3. Test each edge one by one
+        for (int i = 0; i < m; ++i) {
+            
+            // Test if Critical (ignore edge i)
+            int weightWithout = getMSTWeight(n, newEdges, i, -1);
+            
+            // If weight increases or graph breaks, it's critical
+            if (weightWithout > baseWeight) {
+                critical.push_back(newEdges[i][3]);
+            } 
+            else {
+                // Test if Pseudo-Critical (force edge i)
+                int weightWith = getMSTWeight(n, newEdges, -1, i);
+                
+                // If it can still form a valid MST, it's pseudo-critical
+                if (weightWith == baseWeight) {
+                    pseudoCritical.push_back(newEdges[i][3]);
+                }
+            }
+        }
+        
+        return {critical, pseudoCritical};
+    }
+
+private:
+    // Helper function to run Kruskal's
+    // ignoreEdge: index in newEdges to pretend doesn't exist
+    // forceEdge: index in newEdges to unconditionally pick first
+    int getMSTWeight(int n, const vector<vector<int>>& sortedEdges, int ignoreEdge, int forceEdge) {
+        DisjointSet ds(n);
+        int weight = 0;
+        
+        // Force an edge if requested
+        if (forceEdge != -1) {
+            ds.unionBySize(sortedEdges[forceEdge][1], sortedEdges[forceEdge][2]);
+            weight += sortedEdges[forceEdge][0];
+        }
+        
+        // Standard Kruskal's loop
+        for (int i = 0; i < sortedEdges.size(); ++i) {
+            if (i == ignoreEdge) continue; // Skip the ignored edge
+            
+            int w = sortedEdges[i][0];
+            int u = sortedEdges[i][1];
+            int v = sortedEdges[i][2];
+            
+            if (ds.unionBySize(u, v)) {
+                weight += w;
+            }
+        }
+        
+        // If all nodes aren't connected, returning a massive number signals that the graph broke
+        if (ds.components > 1) return 1e9;
+        
+        return weight;
+    }
+};
