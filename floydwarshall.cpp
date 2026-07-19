@@ -119,5 +119,41 @@ int main() {
 
     floydWarshall(V, dist, next_node);
 
+    //for specific routes wanted by user----
+
+    //first make floydWarshall function return boolean type, then the following...
+
+    // bool hasNegativeCycle = floydWarshall(V, dist, next_node);
+
+    // if (hasNegativeCycle) {
+    //     cout << "\nCRITICAL ERROR: Infinite subsidy loop (negative cycle) detected!\n";
+    //     cout << "Network routing shut down.\n";
+    //     return 0;
+    // }
+
+    // Process specific user queries-----
+    // int Q;
+    // cout << "\nEnter number of routing queries: ";
+    // cin >> Q;
+
+    // cout << "Enter queries (StartCity DestCity):\n";
+    // while (Q--) {
+    //     int u, v;
+    //     cin >> u >> v;
+
+    //     if (dist[u][v] == INF) {
+    //         cout << "City " << u << " -> City " << v << ": Unreachable\n";
+    //     } else {
+    //         vector<int> path = reconstructPath(u, v, next_node);
+    //         cout << "City " << u << " -> City " << v 
+    //              << " (Total Toll: " << dist[u][v] << ") | Route: ";
+            
+    //         for (size_t p = 0; p < path.size(); ++p) {
+    //             cout << path[p] << (p == path.size() - 1 ? "" : " -> ");
+    //         }
+    //         cout << "\n";
+    //     }
+    // }
+
     return 0;
 }
