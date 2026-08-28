@@ -1,0 +1,13 @@
+operation,count,total_ns,average_ns
+insert,47,24209,515.085
+delete,23,10624,461.913
+find,7,666,95.1429
+traverse,3,15208,5069.33
+operation,count,total_ns,average_ns
+add,950,897808,945.061
+remove,120,71161,593.008
+update,130,97501,750.008
+conflict,150,9282,61.88
+overlaps,150,259368,1729.12
+at,150,173715,1158.1
+next,150,5209,34.7267
