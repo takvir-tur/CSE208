@@ -178,7 +178,7 @@ public:
         return probes;
     }
 
-    void remove(K key) {
+    void remove(K key){
         int h = (hashFunc == 1) ? Hash1(key, tableSize) : Hash2(key, tableSize);
         
         for(auto it = hashTable[h].begin(); it != hashTable[h].end(); it++){
@@ -303,7 +303,7 @@ public:
             }
 
             if(!hashTable[idx].isOccupied || hashTable[idx].isDeleted){
-                if (i > 0) collisions++;
+                if (i > 0) collisions = collisions + i;
                 hashTable[idx].key = key;
                 hashTable[idx].value = value;
                 hashTable[idx].isOccupied = true;

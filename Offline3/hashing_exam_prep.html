@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSE 208 Hashing — Lab Exam Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1117;
+    --bg-soft:#12151d;
+    --card:#171b26;
+    --card-hover:#1c2130;
+    --border:#262c3c;
+    --border-soft:#1e2330;
+    --text:#e7eaf2;
+    --text-dim:#9aa3ba;
+    --text-faint:#666f87;
+    --h1:#5eead4;      /* Hash1 teal */
+    --h2:#f5b942;      /* Hash2 amber */
+    --hard:#fb7185;    /* difficulty: hard */
+    --med:#f5b942;     /* difficulty: medium */
+    --easy:#5eead4;    /* difficulty: easy */
+    --radius:12px;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+    --sans:'Inter', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--h1);}
+  code, pre{font-family:var(--mono);}
+  ::selection{background:rgba(94,234,212,0.25);}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:56px 24px 40px;
+    background:
+      radial-gradient(ellipse 900px 400px at 15% -10%, rgba(94,234,212,0.10), transparent),
+      radial-gradient(ellipse 900px 400px at 90% -20%, rgba(245,185,66,0.09), transparent),
+      var(--bg-soft);
+    border-bottom:1px solid var(--border);
+  }
+  .hero-inner{max-width:1180px;margin:0 auto;}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:12.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:18px;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--h1);box-shadow:0 0 0 3px rgba(94,234,212,.15);}
+  h1.title{
+    font-family:var(--mono);
+    font-size:clamp(28px,4vw,44px);
+    font-weight:700;
+    margin:0 0 12px;
+    letter-spacing:-0.01em;
+  }
+  h1.title .amber{color:var(--h2);}
+  .subtitle{
+    color:var(--text-dim);
+    font-size:16px;
+    max-width:640px;
+    margin:0 0 28px;
+  }
+  .hero-stats{display:flex;flex-wrap:wrap;gap:28px;margin-bottom:32px;}
+  .stat{font-family:var(--mono);}
+  .stat .num{font-size:26px;font-weight:700;color:var(--text);}
+  .stat .num.h1c{color:var(--h1);} .stat .num.h2c{color:var(--h2);}
+  .stat .lbl{font-size:11.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.08em;}
+
+  /* bucket diagram signature element */
+  .bucket-strip{display:flex;gap:4px;align-items:flex-end;margin-top:8px;position:relative;height:118px;}
+  .bucket{
+    width:30px;height:40px;border:1px solid var(--border);border-radius:4px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:10px;color:var(--text-faint);
+    background:var(--card);position:relative;flex:0 0 auto;
+  }
+  .bucket.lit1{border-color:var(--h1);color:var(--h1);box-shadow:0 0 0 1px var(--h1) inset, 0 0 14px rgba(94,234,212,.25);}
+  .bucket.lit2{border-color:var(--h2);color:var(--h2);box-shadow:0 0 0 1px var(--h2) inset, 0 0 14px rgba(245,185,66,.25);}
+  .bucket-strip svg{position:absolute;top:-56px;left:0;pointer-events:none;overflow:visible;}
+  .key-label{
+    position:absolute;top:-56px;font-family:var(--mono);font-size:12px;
+    background:var(--card);border:1px solid var(--border);border-radius:6px;padding:3px 8px;
+  }
+  .h-tag{font-family:var(--mono);font-size:11px;position:absolute;top:66px;}
+  .h1tag{color:var(--h1);} .h2tag{color:var(--h2);}
+
+  /* ---------- LAYOUT ---------- */
+  .layout{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:230px 1fr;gap:36px;padding:36px 24px 100px;}
+  @media (max-width:880px){.layout{grid-template-columns:1fr;}}
+
+  .sidebar{position:sticky;top:20px;align-self:start;display:flex;flex-direction:column;gap:22px;}
+  @media (max-width:880px){.sidebar{position:static;}}
+  .side-block h4{
+    font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;
+    color:var(--text-faint);margin:0 0 10px;
+  }
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{
+    font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:20px;
+    border:1px solid var(--border);color:var(--text-dim);cursor:pointer;
+    background:var(--card);user-select:none;transition:.15s;
+  }
+  .chip:hover{border-color:var(--text-faint);color:var(--text);}
+  .chip.active{border-color:var(--h1);color:var(--h1);background:rgba(94,234,212,.08);}
+  .chip.active[data-diff="Hard"]{border-color:var(--hard);color:var(--hard);background:rgba(251,113,133,.08);}
+  .chip.active[data-diff="Medium"]{border-color:var(--med);color:var(--med);background:rgba(245,185,66,.08);}
+  .side-btn{
+    font-family:var(--mono);font-size:12px;padding:9px 12px;border-radius:8px;
+    border:1px solid var(--border);background:var(--card);color:var(--text-dim);cursor:pointer;text-align:left;
+  }
+  .side-btn:hover{color:var(--text);border-color:var(--text-faint);}
+  .side-nav a{display:block;font-size:13px;color:var(--text-dim);text-decoration:none;padding:4px 0;border-left:2px solid transparent;padding-left:10px;}
+  .side-nav a:hover{color:var(--h1);border-color:var(--h1);}
+  .count-note{font-family:var(--mono);font-size:12px;color:var(--text-faint);}
+
+  main{min-width:0;}
+
+  /* ---------- TOOLKIT CALLOUT ---------- */
+  .toolkit{
+    background:linear-gradient(180deg, rgba(94,234,212,0.06), transparent 60%), var(--card);
+    border:1px solid var(--border);border-left:3px solid var(--h1);
+    border-radius:var(--radius);padding:22px 24px;margin-bottom:40px;
+  }
+  .toolkit h2{font-family:var(--mono);font-size:17px;margin:0 0 6px;}
+  .toolkit p{color:var(--text-dim);font-size:14.5px;margin:0 0 14px;}
+  .toolkit ul{margin:0 0 16px;padding-left:20px;color:var(--text-dim);font-size:14px;}
+  .toolkit li{margin-bottom:6px;}
+  .toolkit code.inline, .card code.inline, .gotcha code.inline{
+    background:rgba(255,255,255,.06);padding:1px 6px;border-radius:5px;font-size:12.5px;color:var(--h2);
+  }
+  .gotcha{
+    background:rgba(251,113,133,.07);border:1px solid rgba(251,113,133,.3);border-radius:8px;
+    padding:14px 16px;font-size:13.5px;color:#f3d3d8;margin-top:6px;
+  }
+  .gotcha b{color:var(--hard);}
+
+  /* ---------- SECTION HEADERS ---------- */
+  .section-head{margin:52px 0 20px;display:flex;align-items:baseline;gap:12px;}
+  .section-head h2{font-family:var(--mono);font-size:20px;margin:0;}
+  .section-head .line{flex:1;height:1px;background:var(--border);}
+  .section-head .sub{font-size:12.5px;color:var(--text-faint);font-family:var(--mono);}
+
+  /* ---------- PROBLEM CARD ---------- */
+  .card{
+    background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+    margin-bottom:18px;overflow:hidden;scroll-margin-top:20px;
+  }
+  .card-head{padding:18px 22px;display:flex;flex-direction:column;gap:10px;}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;}
+  .card-title{font-family:var(--mono);font-size:16.5px;font-weight:600;color:var(--text);}
+  .exam-tag{font-family:var(--mono);font-size:11.5px;color:var(--text-faint);margin-top:3px;}
+  .pills{display:flex;gap:6px;flex-shrink:0;}
+  .pill{font-family:var(--mono);font-size:10.5px;padding:3px 9px;border-radius:20px;border:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;}
+  .pill.diff-Easy{color:var(--easy);border-color:rgba(94,234,212,.4);}
+  .pill.diff-Medium{color:var(--med);border-color:rgba(245,185,66,.4);}
+  .pill.diff-Hard{color:var(--hard);border-color:rgba(251,113,133,.4);}
+  .pill.topic{color:var(--text-dim);}
+  .statement{font-size:14.5px;color:var(--text-dim);}
+  .statement p{margin:0 0 8px;}
+  .statement code.inline{background:rgba(255,255,255,.06);padding:1px 6px;border-radius:5px;font-size:12.5px;color:var(--h2);}
+  .approach{
+    font-size:14px;background:var(--bg-soft);border:1px solid var(--border-soft);border-radius:8px;
+    padding:12px 14px;color:var(--text-dim);
+  }
+  .approach b{color:var(--h1);font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;}
+
+  details.sol{border-top:1px solid var(--border);}
+  details.sol > summary{
+    cursor:pointer;list-style:none;padding:14px 22px;font-family:var(--mono);font-size:13px;
+    color:var(--h1);display:flex;align-items:center;gap:8px;user-select:none;
+  }
+  details.sol > summary::-webkit-details-marker{display:none;}
+  details.sol > summary::before{content:'▸';display:inline-block;transition:transform .15s;font-size:11px;}
+  details.sol[open] > summary::before{transform:rotate(90deg);}
+  details.sol > summary:hover{background:var(--card-hover);}
+  .sol-body{padding:4px 22px 22px;}
+  .changes{margin:0 0 16px;padding-left:20px;font-size:13.5px;color:var(--text-dim);}
+  .changes li{margin-bottom:7px;}
+  .code-block{margin:14px 0;}
+  .code-label{font-family:var(--mono);font-size:11.5px;color:var(--text-faint);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;}
+  pre{
+    background:#11141d;border:1px solid var(--border-soft);border-radius:8px;
+    padding:14px 16px;overflow-x:auto;font-size:12.6px;line-height:1.55;margin:0;
+  }
+  .note{
+    font-size:13px;color:var(--text-dim);background:rgba(245,185,66,.06);border:1px solid rgba(245,185,66,.25);
+    border-radius:8px;padding:10px 14px;margin-top:12px;
+  }
+  .note b{color:var(--h2);}
+
+  /* ---------- PRACTICE ---------- */
+  .practice-card{
+    background:var(--card);border:1px dashed var(--border);border-radius:var(--radius);
+    padding:18px 22px;margin-bottom:14px;
+  }
+  .practice-card .card-title{color:var(--text);}
+  .practice-card .statement{margin:10px 0;}
+  details.hint > summary{
+    cursor:pointer;list-style:none;font-family:var(--mono);font-size:12.5px;color:var(--h2);padding:6px 0;
+  }
+  details.hint > summary::-webkit-details-marker{display:none;}
+  details.hint > summary::before{content:'💡 ';}
+  details.hint .hint-body{font-size:13.5px;color:var(--text-dim);padding:8px 0 2px 4px;border-left:2px solid var(--border);padding-left:12px;margin-top:4px;}
+
+  footer{max-width:1180px;margin:0 auto;padding:0 24px 60px;color:var(--text-faint);font-size:12.5px;font-family:var(--mono);}
+  footer a{color:var(--text-faint);}
+
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow"><span class="dot"></span>CSE 208 · Data Structures &amp; Algorithms II Sessional · Hashing Lab</div>
+    <h1 class="title">Every past hashing<br>online, solved on top of<br><span class="amber">your own</span> hash.cpp</h1>
+    <p class="subtitle">Ten previous-year lab problems, each one worked out as a concrete edit to the <code style="color:var(--h1)">chainHash</code> / <code style="color:var(--h2)">openHash</code> classes you already wrote — plus four fresh problems in the same style to test yourself before the real thing.</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="num h1c" id="stat-solved">10</div><div class="lbl">Worked problems</div></div>
+      <div class="stat"><div class="num h2c" id="stat-practice">4</div><div class="lbl">Practice problems</div></div>
+      <div class="stat"><div class="num" id="stat-topics">5</div><div class="lbl">Topic groups</div></div>
+      <div class="stat"><div class="num" id="stat-tested">6</div><div class="lbl">Compiled &amp; verified</div></div>
+    </div>
+    <div class="bucket-strip" id="bucketStrip" aria-hidden="true"></div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-block">
+      <h4>Filter by topic</h4>
+      <div class="chips" id="topicChips"></div>
+    </div>
+    <div class="side-block">
+      <h4>Filter by difficulty</h4>
+      <div class="chips" id="diffChips"></div>
+    </div>
+    <div class="side-block">
+      <h4>View</h4>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="side-btn" id="expandAll">▾ Expand all solutions</button>
+        <button class="side-btn" id="collapseAll">▸ Collapse all solutions</button>
+        <button class="side-btn" id="resetFilters">↺ Reset filters</button>
+      </div>
+    </div>
+    <div class="side-block">
+      <h4>Jump to</h4>
+      <div class="side-nav">
+        <a href="#toolkit">Toolkit upgrades</a>
+        <a href="#solved">Worked problems</a>
+        <a href="#practice">Practice problems</a>
+      </div>
+    </div>
+    <div class="count-note" id="visibleCount"></div>
+  </aside>
+
+  <main>
+    <div class="toolkit" id="toolkit">
+      <h2>🔧 Three small additions to <span style="color:var(--h1)">hash.cpp</span> that half these problems lean on</h2>
+      <p>Your <code class="inline">chainHash</code>/<code class="inline">openHash</code> classes only expose <code class="inline">insert</code>, <code class="inline">search</code> (which returns a probe count, not a value) and <code class="inline">remove</code>. A lot of the problems below need to actually <em>look up a value</em> or <em>list everything stored</em> — so add these once, near the bottom of <code class="inline">chainHash</code>, before you touch anything else:</p>
+      <ul>
+        <li><code class="inline">bool contains(K key)</code> — true/false membership test, for set problems.</li>
+        <li><code class="inline">bool find(K key, V&amp; outValue)</code> — the lookup your <code class="inline">search()</code> doesn't give you.</li>
+        <li><code class="inline">vector&lt;pair&lt;K,V&gt;&gt; getAll()</code> — walks every bucket, needed to print/iterate the whole table.</li>
+        <li><code class="inline">void increment(K key)</code> — insert-or-bump-by-1, for frequency counting.</li>
+      </ul>
+      <div class="code-block">
+        <div class="code-label">Add to chainHash, right before the closing brace of the class</div>
+        <pre><code class="language-cpp" id="toolkit-code"></code></pre>
+      </div>
+      <div class="gotcha">
+        <b>Gotcha worth knowing before problems 1 &amp; 2:</b> your <code class="inline">nextSize()</code> already multiplies its input by 2 internally (<code class="inline">i = currSize*2+1</code>), and <code class="inline">prevSize()</code> already halves its input (<code class="inline">i = currSize/2-1</code>). Your existing <code class="inline">resize(nextSize(tableSize*2+1))</code> calls therefore grow the table <b>~4×</b>, not ~2×, and <code class="inline">resize(prevSize(tableSize/2))</code> shrinks it to <b>~¼</b>, not ~½. Whenever a problem explicitly asks for "approximately double" or "approximately half", call <code class="inline">nextSize(tableSize)</code> and <code class="inline">prevSize(tableSize)</code> directly — not the doubled/halved argument.
+      </div>
+    </div>
+
+    <div class="section-head" id="solved">
+      <h2>Worked problems</h2>
+      <div class="line"></div>
+      <div class="sub">from your uploaded exam bank</div>
+    </div>
+    <div id="problemList"></div>
+
+    <div class="section-head" id="practice">
+      <h2>Try these yourself</h2>
+      <div class="line"></div>
+      <div class="sub">same style, not from the exam bank</div>
+    </div>
+    <div id="practiceList"></div>
+  </main>
+</div>
+
+<footer>
+  Built from hash.cpp, main.cpp and your uploaded past-paper PDF. Hash1 = teal, Hash2 = amber, throughout — same convention your own code uses.
+</footer>
+
+<script>
+/* ============================================================
+   DATA
+   ============================================================ */
+const TOPICS = [
+  "Rehashing & Resizing",
+  "Open Addressing Internals",
+  "Chaining Internals",
+  "Multi-Key / Two-Layer Tables",
+  "String & Set Applications"
+];
+const DIFFS = ["Easy","Medium","Hard"];
+
+const TOOLKIT_CODE =
+`bool contains(K key){
+    int h = (hashFunc == 1) ? Hash1(key, tableSize) : Hash2(key, tableSize);
+    for(auto& p : hashTable[h]) if(p.first == key) return true;
+    return false;
+}
+
+bool find(K key, V& outValue){
+    int h = (hashFunc == 1) ? Hash1(key, tableSize) : Hash2(key, tableSize);
+    for(auto& p : hashTable[h]) if(p.first == key){ outValue = p.second; return true; }
+    return false;
+}
+
+vector<pair<K,V>> getAll(){
+    vector<pair<K,V>> res;
+    for(auto& bucket : hashTable) for(auto& p : bucket) res.push_back(p);
+    return res;
+}
+
+void increment(K key){
+    double loadFactor = (double)(count + 1) / tableSize;
+    if(loadFactor > maxLoadFactor && insertCount >= lastCount / 2){
+        resize(nextSize(tableSize * 2 + 1));
+    }
+    int h = (hashFunc == 1) ? Hash1(key, tableSize) : Hash2(key, tableSize);
+    for(auto& p : hashTable[h]) if(p.first == key){ p.second++; return; }
+    hashTable[h].push_back({key, 1});
+    count++;
+    insertCount++;
+}`;
+
+const PROBLEMS = [
+{
+  id: "p1",
+  examTag: "Hashing Online A1 / B1 · Jan 2023 · 30 min",
+  title: "1 · Rehash a double-hashing table by load factor",
+  topic: "Rehashing & Resizing",
+  difficulty: "Medium",
+  tested: false,
+  statement: `<p>Take initial size <code class="inline">N</code> and max load factor <code class="inline">L</code> as input. After <em>every</em> insert/delete, recompute the load factor. If it exceeds <code class="inline">L</code>, rehash to ~double size (prime). If it falls below <code class="inline">0.3×L</code>, rehash to ~half size (prime) — but never below <code class="inline">N</code>.</p>`,
+  approach: `Your <code class="inline">openHash</code> already has a working <code class="inline">resize()</code> and the right idea — it just checks the wrong condition (batched insert/delete counters instead of "every single operation") and uses fixed global constants instead of the runtime <code class="inline">N</code>/<code class="inline">L</code> the problem wants. Strip the batching gate, make the thresholds instance fields, and check after every mutation.`,
+  changes: [
+    "Store <code class=\"inline\">initSize</code> (= N, the floor) and <code class=\"inline\">maxLF</code> (= L) as constructor parameters instead of using the global <code class=\"inline\">maxLoadFactor</code>/<code class=\"inline\">minLoadFactor</code>.",
+    "Delete the <code class=\"inline\">insertCount &gt;= lastCount/2</code> gating — the spec wants a check after <em>every</em> insert and delete, not every N/2 of them.",
+    "Grow condition: <code class=\"inline\">loadFactor &gt; maxLF</code> → <code class=\"inline\">resize(nextSize(tableSize))</code> (see the toolkit gotcha above — not <code class=\"inline\">tableSize*2+1</code>).",
+    "Shrink condition: <code class=\"inline\">loadFactor &lt; 0.3 * maxLF</code> → compute <code class=\"inline\">prevSize(tableSize)</code>, only resize if that's <code class=\"inline\">&gt;= initSize</code> and smaller than the current size."
+  ],
+  code: [
+    { label: "Standalone class built on top of your Hash1/Hash2/auxHash/nextSize/prevSize", lang:"cpp", body:
+`#include "hash.cpp"   // reuses Hash1, Hash2, auxHash, nextSize, prevSize
+
+class DoubleHashRehash {
+    struct Entry { string key; int value; bool occupied=false, deleted=false; };
+    vector<Entry> table;
+    int tableSize, initSize;   // initSize = N, the floor we never shrink below
+    double maxLF;              // L, the input load-factor ceiling
+    int count = 0;
+    int hashFunc;
+
+    double loadFactor() const { return (double)count / tableSize; }
+
+    void rawInsert(const string& key, int value){
+        long long h = (hashFunc == 1) ? Hash1(key, tableSize) : Hash2(key, tableSize);
+        long long aux = auxHash(key, tableSize);
+        for(int i = 0; i < tableSize; i++){
+            long long idx = (h + i * aux) % tableSize;
+            if(!table[idx].occupied || table[idx].deleted){
+                table[idx] = {key, value, true, false};
+                count++;
+                return;
+            }
+        }
+    }
+
+    void resize(int newSize){
+        vector<Entry> old = table;
+        table.assign(newSize, Entry());
+        tableSize = newSize;
+        count = 0;
+        for(auto& e : old) if(e.occupied && !e.deleted) rawInsert(e.key, e.value);
+    }
+
+    void afterMutation(){
+        double lf = loadFactor();
+        if(lf > maxLF){
+            resize(nextSize(tableSize));                 // ~2x, next prime
+        } else if(lf < 0.3 * maxLF){
+            int shrunk = prevSize(tableSize);             // ~half, prev prime
+            if(shrunk >= initSize && shrunk < tableSize) resize(shrunk);
+        }
+    }
+
+public:
+    DoubleHashRehash(int N, double L, int func = 1)
+        : tableSize(N), initSize(N), maxLF(L), hashFunc(func) {
+        table.assign(tableSize, Entry());
+    }
+
+    void insert(const string& key, int value){
+        rawInsert(key, value);
+        afterMutation();
+    }
+
+    void remove(const string& key){
+        long long h = (hashFunc == 1) ? Hash1(key, tableSize) : Hash2(key, tableSize);
+        long long aux = auxHash(key, tableSize);
+        for(int i = 0; i < tableSize; i++){
+            long long idx = (h + i * aux) % tableSize;
+            if(!table[idx].occupied) return;
+            if(!table[idx].deleted && table[idx].key == key){
+                table[idx].deleted = true;
+                count--;
+                afterMutation();
+                return;
+            }
+        }
+    }
+
+    int currentSize() const { return tableSize; }
+};
+
+int main(){
+    int N; double L;
+    cin >> N >> L;
+    DoubleHashRehash t(N, L);
+    string cmd, key; int val;
+    while(cin >> cmd){
+        if(cmd == "INSERT"){ cin >> key >> val; t.insert(key, val); }
+        else if(cmd == "DELETE"){ cin >> key; t.remove(key); }
+        cout << "size now: " << t.currentSize() << "\\n";
+    }
+}` }
+  ],
+  notes: [ "The sheet doesn't pin down an exact I/O format (it's described as an interactive demo — \"insert till a rehash triggers, then delete till another triggers\"), so wire the <code class=\"inline\">INSERT</code>/<code class=\"inline\">DELETE</code> command loop above to whatever your lab's checker actually expects; the resizing <em>behaviour</em> is what's being graded." ]
+},
+{
+  id: "p2",
+  examTag: "Hashing Online A2 · Jan 2023 · 35 min",
+  title: "2 · Rehash a chaining table by max chain length",
+  topic: "Rehashing & Resizing",
+  difficulty: "Hard",
+  tested: false,
+  statement: `<p>Take initial size <code class="inline">N</code> and max chain length <code class="inline">C</code> as input. Every 100 insertions, check the longest chain; if it exceeds <code class="inline">C</code>, double the table. Every 100 deletions, check if the longest chain fell below <code class="inline">0.8×C</code>; if so, halve it (never below <code class="inline">N</code>). Every time a rehash fires, print average probe count (sample 10% of elements), load factor, and max chain length — both before and after.</p>`,
+  approach: `This is the same resize machinery as your <code class="inline">chainHash</code>, but the trigger is structural (longest chain) instead of load-factor, and it's checked in batches of 100, not every op. You also need a way to sample 10% of stored keys for the probe-count report — collect all keys by walking every bucket once.`,
+  changes: [
+    "Add two counters, <code class=\"inline\">insertsSinceCheck</code> / <code class=\"inline\">deletesSinceCheck</code>, incremented on every insert/remove and reset to 0 every time they hit 100 — that's the \"after every 100 insertions/deletions\" gate.",
+    "Add <code class=\"inline\">maxChainLen()</code>: loop over <code class=\"inline\">hashTable</code>, return the largest <code class=\"inline\">bucket.size()</code>.",
+    "Add a stats reporter that walks all buckets to collect keys, shuffles, samples 10%, and averages <code class=\"inline\">search()</code> probe counts on that sample — call it once right before <code class=\"inline\">resize()</code> and once right after.",
+    "Grow: after 100 inserts, if <code class=\"inline\">maxChainLen() &gt; C</code> → report → <code class=\"inline\">resize(nextSize(tableSize))</code> → report.",
+    "Shrink: after 100 deletes, if <code class=\"inline\">maxChainLen() &lt; 0.8*C</code> and <code class=\"inline\">prevSize(tableSize) &gt;= initSize</code> → report → resize → report."
+  ],
+  code: [
+    { label: "Standalone class (string keys, mirrors your chainHash)", lang:"cpp", body:
+`#include "hash.cpp"
+#include <random>
+#include <algorithm>
+
+class ChainRehashByLength {
+    vector<list<pair<string,int>>> table;
+    int tableSize, initSize, maxChainC;
+    int count = 0, hashFunc;
+    int insertsSinceCheck = 0, deletesSinceCheck = 0;
+
+    int maxChainLen() const {
+        int m = 0;
+        for(auto& bucket : table) m = max(m, (int)bucket.size());
+        return m;
+    }
+
+    double avgProbe10pct(){
+        vector<string> keys;
+        for(auto& bucket : table) for(auto& p : bucket) keys.push_back(p.first);
+        if(keys.empty()) return 0.0;
+        shuffle(keys.begin(), keys.end(), mt19937(random_device{}()));
+        int sampleN = max(1, (int)keys.size() / 10);
+        long long total = 0;
+        for(int i = 0; i < sampleN; i++) total += search(keys[i]);
+        return (double)total / sampleN;
+    }
+
+    void report(const string& when){
+        cout << when << " rehash -> avg probe: " << fixed << setprecision(3) << avgProbe10pct()
+             << ", load factor: " << (double)count / tableSize
+             << ", max chain length: " << maxChainLen() << "\\n";
+    }
+
+    void resize(int newSize){
+        vector<list<pair<string,int>>> old = table;
+        table.assign(newSize, {});
+        tableSize = newSize;
+        for(auto& bucket : old) for(auto& p : bucket){
+            int h = (hashFunc == 1) ? Hash1(p.first, tableSize) : Hash2(p.first, tableSize);
+            table[h].push_back(p);
+        }
+    }
+
+public:
+    ChainRehashByLength(int N, int C, int func = 1)
+        : tableSize(N), initSize(N), maxChainC(C), hashFunc(func) {
+        table.assign(tableSize, {});
+    }
+
+    int search(const string& key){
+        int h = (hashFunc == 1) ? Hash1(key, tableSize) : Hash2(key, tableSize);
+        int probes = 1;
+        for(auto& p : table[h]){ if(p.first == key) return probes; probes++; }
+        return probes;
+    }
+
+    void insert(const string& key, int value){
+        int h = (hashFunc == 1) ? Hash1(key, tableSize) : Hash2(key, tableSize);
+        for(auto& p : table[h]) if(p.first == key) return;
+        table[h].push_back({key, value});
+        count++;
+        if(++insertsSinceCheck == 100){
+            insertsSinceCheck = 0;
+            if(maxChainLen() > maxChainC){
+                report("Before"); resize(nextSize(tableSize)); report("After");
+            }
+        }
+    }
+
+    void remove(const string& key){
+        int h = (hashFunc == 1) ? Hash1(key, tableSize) : Hash2(key, tableSize);
+        for(auto it = table[h].begin(); it != table[h].end(); ++it){
+            if(it->first == key){ table[h].erase(it); count--; break; }
+        }
+        if(++deletesSinceCheck == 100){
+            deletesSinceCheck = 0;
+            if(maxChainLen() < 0.8 * maxChainC){
+                int shrunk = prevSize(tableSize);
+                if(shrunk >= initSize && shrunk < tableSize){
+                    report("Before"); resize(shrunk); report("After");
+                }
+            }
+        }
+    }
+};` }
+  ],
+  notes: ["Same <code class=\"inline\">nextSize(tableSize)</code> / <code class=\"inline\">prevSize(tableSize)</code> gotcha as problem 1 — that's what gives \"approximately double / half\" here."]
+},
+{
+  id: "p3",
+  examTag: "Hashing Online B2 · Jan 2023 · 35 min",
+  title: "3 · Two-layer hash table (general form)",
+  topic: "Multi-Key / Two-Layer Tables",
+  difficulty: "Medium",
+  tested: false,
+  statement: `<p>Outer table of size N holds pointers to N inner tables (also size N). <code class="inline">insert(key1, key2, value)</code>: key1 picks the outer slot, key2 picks the slot in that outer slot's inner table. <code class="inline">search(key1, key2)</code> returns the value; <code class="inline">search(key1)</code> alone returns every <code class="inline">(key2, value)</code> pair under that key1.</p>`,
+  approach: `The inner table is exactly your existing <code class="inline">chainHash&lt;K2,V&gt;</code> — no changes needed there once you've added <code class="inline">find()</code>/<code class="inline">getAll()</code> from the toolkit. The only new code is a thin outer array, probed with your own <code class="inline">Hash1</code>, whose slots each own a heap-allocated inner <code class="inline">chainHash</code>.`,
+  changes: [
+    "Outer table: <code class=\"inline\">vector&lt;Outer&gt;</code> of size N, each holding a group key + a <code class=\"inline\">chainHash&lt;K2,V&gt;*</code>, probed with your own <code class=\"inline\">Hash1</code> + linear probing.",
+    "<code class=\"inline\">insert</code> creates the inner <code class=\"inline\">chainHash</code> lazily on first use of a new key1, then just calls <code class=\"inline\">inner-&gt;insert(key2, value)</code> — reuse, don't reimplement.",
+    "<code class=\"inline\">search(key1, key2)</code> is one line: <code class=\"inline\">inner-&gt;find(key2, out)</code> from the toolkit.",
+    "<code class=\"inline\">search(key1)</code> alone is one line too: <code class=\"inline\">inner-&gt;getAll()</code>."
+  ],
+  code: [
+    { label: "TwoLayerHash built directly on your chainHash", lang:"cpp", body:
+`#include "hash.cpp"
+
+template <typename K2, typename V>
+class TwoLayerHash {
+    struct Outer {
+        string key;
+        chainHash<K2, V>* inner = nullptr;
+        bool occupied = false;
+    };
+    vector<Outer> outer;
+    int N;
+
+    int probeOuter(const string& k1, bool forInsert){
+        int h = Hash1(k1, N);
+        for(int i = 0; i < N; i++){
+            int idx = (h + i) % N;                 // linear probing
+            if(!outer[idx].occupied) return forInsert ? idx : -1;
+            if(outer[idx].key == k1) return idx;
+        }
+        return -1;
+    }
+
+public:
+    TwoLayerHash(int n) : N(n) { outer.assign(N, Outer()); }
+
+    void insert(string k1, K2 k2, V value){
+        int idx = probeOuter(k1, true);
+        if(idx == -1) return;                       // outer table full
+        if(!outer[idx].occupied){
+            outer[idx].key = k1;
+            outer[idx].occupied = true;
+            outer[idx].inner = new chainHash<K2, V>(2);
+        }
+        outer[idx].inner->insert(k2, value);
+    }
+
+    bool search(string k1, K2 k2, V& out){
+        int idx = probeOuter(k1, false);
+        if(idx == -1) return false;
+        return outer[idx].inner->find(k2, out);      // toolkit addition
+    }
+
+    vector<pair<K2, V>> search(string k1){
+        int idx = probeOuter(k1, false);
+        if(idx == -1) return {};
+        return outer[idx].inner->getAll();            // toolkit addition
+    }
+};` }
+  ],
+  notes: ["Problem 4 below is the concrete, exam-worded version of this same idea (specific hash+probing rules, exact I/O format) — read this one for the concept, that one for the exact contract."]
+},
+{
+  id: "p4",
+  examTag: "Hashing Online (permission DB variant) · Jan 2023",
+  title: "4 · Permission database — two-layer, mixed probing",
+  topic: "Multi-Key / Two-Layer Tables",
+  difficulty: "Hard",
+  tested: true,
+  statement: `<p>Outer table (size N) keyed by <code class="inline">group_id</code>, using <b style="color:var(--h1)">Hash1 + linear probing</b>: <code class="inline">idx = (Hash1(group_id) + i) mod N</code>. Each outer slot owns an inner table (size N) keyed by <code class="inline">user_id</code>, using <b style="color:var(--h2)">Hash2 + quadratic probing</b>: <code class="inline">idx = (Hash2(user_id) + i²) mod N</code>. Support <code class="inline">INSERT</code>, <code class="inline">SEARCH group user</code>, <code class="inline">SEARCH group</code> (list all users in that group), and <code class="inline">DELETE group user</code> from stdin, exact wording as shown.</p>`,
+  approach: `This is problem 3's structure, but both levels are open addressing with two <em>different</em> named probing rules instead of chaining, so it needs its own inner/outer structs rather than reusing <code class="inline">chainHash</code>/<code class="inline">openHash</code> directly. The one non-obvious trap: quadratic probing scatters entries across slots in a different order than they were inserted, so a naive "print slot 0..N-1" for <code class="inline">SEARCH group</code> silently reorders the output — the sample expects insertion order.`,
+  changes: [
+    "Outer struct: <code class=\"inline\">{group_id, InnerTable* inner, occupied}</code>, probed with <code class=\"inline\">(Hash1(group_id,N) + i) % N</code> — linear.",
+    "Inner struct: <code class=\"inline\">{user_id, permission, occupied, deleted}</code> per slot, probed with <code class=\"inline\">(Hash2(user_id,N) + i*i) % N</code> — quadratic, with tombstones for delete.",
+    "<b>Track insertion order separately</b>: give <code class=\"inline\">InnerTable</code> a <code class=\"inline\">vector&lt;string&gt; insertOrder</code>, push a user_id onto it only the first time it's inserted, and have <code class=\"inline\">all()</code> walk <code class=\"inline\">insertOrder</code> (looking each one up) instead of walking the raw slot array — otherwise quadratic probing scrambles the printed order relative to the sample.",
+    "Parse each command line with a <code class=\"inline\">stringstream</code>; whether <code class=\"inline\">SEARCH</code> got one token or two after it (via a failed <code class=\"inline\">&gt;&gt;</code>) tells you which of the two SEARCH forms you're in."
+  ],
+  code: [
+    { label: "Full program — compiled and verified against the sample I/O below", lang:"cpp", body:
+`#include <bits/stdc++.h>
+using namespace std;
+
+int N;
+
+int Hash1(const string& k, int size){
+    int h = 0, p = 31;
+    for(char c : k) h = (h * p + c) % size;
+    return h;
+}
+int Hash2(const string& k, int size){
+    unsigned int h = 2166136261u;
+    for(char c : k){ h ^= c; h *= 16777619u; }
+    return h % size;
+}
+
+struct InnerEntry { string userId, permission; bool occupied=false, deleted=false; };
+
+struct InnerTable {
+    vector<InnerEntry> slots;
+    vector<string> insertOrder;              // remembers insertion order, for SEARCH(group)
+    InnerTable(int n) { slots.assign(n, InnerEntry()); }
+
+    void insert(const string& userId, const string& perm){
+        int h = Hash2(userId, N);
+        for(int i = 0; i < N; i++){
+            int idx = (h + i * i) % N;        // quadratic
+            if(!slots[idx].occupied || slots[idx].deleted){
+                slots[idx] = {userId, perm, true, false};
+                insertOrder.push_back(userId);
+                return;
+            }
+            if(slots[idx].userId == userId && !slots[idx].deleted) return; // no dup
+        }
+    }
+
+    bool search(const string& userId, string& permOut){
+        int h = Hash2(userId, N);
+        for(int i = 0; i < N; i++){
+            int idx = (h + i * i) % N;
+            if(!slots[idx].occupied) return false;
+            if(!slots[idx].deleted && slots[idx].userId == userId){ permOut = slots[idx].permission; return true; }
+        }
+        return false;
+    }
+
+    bool remove(const string& userId, string& permOut){
+        int h = Hash2(userId, N);
+        for(int i = 0; i < N; i++){
+            int idx = (h + i * i) % N;
+            if(!slots[idx].occupied) return false;
+            if(!slots[idx].deleted && slots[idx].userId == userId){
+                slots[idx].deleted = true;
+                permOut = slots[idx].permission;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    vector<pair<string,string>> all(){
+        vector<pair<string,string>> res;
+        string perm;
+        for(auto& uid : insertOrder)          // walk insertion order, not slot order
+            if(search(uid, perm)) res.push_back({uid, perm});
+        return res;
+    }
+};
+
+struct OuterEntry { string groupId; InnerTable* inner=nullptr; bool occupied=false; };
+vector<OuterEntry> outer;
+
+InnerTable* findOrCreateGroup(const string& groupId){
+    int h = Hash1(groupId, N);
+    for(int i = 0; i < N; i++){
+        int idx = (h + i) % N;                // linear
+        if(!outer[idx].occupied){
+            outer[idx] = {groupId, new InnerTable(N), true};
+            return outer[idx].inner;
+        }
+        if(outer[idx].groupId == groupId) return outer[idx].inner;
+    }
+    return nullptr;
+}
+
+InnerTable* findGroup(const string& groupId){
+    int h = Hash1(groupId, N);
+    for(int i = 0; i < N; i++){
+        int idx = (h + i) % N;
+        if(!outer[idx].occupied) return nullptr;
+        if(outer[idx].groupId == groupId) return outer[idx].inner;
+    }
+    return nullptr;
+}
+
+int main(){
+    int Q; cin >> N >> Q;
+    outer.assign(N, OuterEntry());
+    cin.ignore();
+    for(int q = 0; q < Q; q++){
+        string line; getline(cin, line);
+        stringstream ss(line);
+        string cmd; ss >> cmd;
+
+        if(cmd == "INSERT"){
+            string g, u, perm; ss >> g >> u >> perm;
+            findOrCreateGroup(g)->insert(u, perm);
+        }
+        else if(cmd == "SEARCH"){
+            string g, u;
+            if(ss >> g >> u){                         // two keys
+                InnerTable* t = findGroup(g);
+                string perm;
+                if(t && t->search(u, perm)) cout << perm << "\\n";
+                else cout << "User not found in group " << g << "\\n";
+            } else {                                   // one key
+                InnerTable* t = findGroup(g);
+                if(!t){ cout << "Group not found\\n"; continue; }
+                auto all = t->all();
+                if(all.empty()){ cout << "Group not found\\n"; continue; }
+                for(size_t i = 0; i < all.size(); i++){
+                    cout << "(" << all[i].first << ", " << all[i].second << ")";
+                    if(i + 1 < all.size()) cout << ", ";
+                }
+                cout << "\\n";
+            }
+        }
+        else if(cmd == "DELETE"){
+            string g, u; ss >> g >> u;
+            InnerTable* t = findGroup(g);
+            string perm;
+            if(t && t->remove(u, perm)) cout << "(" << u << ", " << perm << ") deleted\\n";
+        }
+    }
+}` }
+  ],
+  notes: ["Compiled against the sheet's sample input and produced an exact match, including <code class=\"inline\">Group not found</code> / <code class=\"inline\">User not found in group 101</code>, once the insertion-order fix was in place."]
+},
+{
+  id: "p5",
+  examTag: "Hashing Online B1+B2 · Jan 2023 · 30 min",
+  title: "5 · printProbeSequence for open addressing",
+  topic: "Open Addressing Internals",
+  difficulty: "Easy",
+  tested: true,
+  statement: `<p>Add <code class="inline">printProbeSequence(key)</code> to your open-addressing table: print every slot index visited while searching for <code class="inline">key</code> in its current state, arrow-separated. Not supported for chaining (chaining has no probe sequence — it's a direct bucket index).</p>`,
+  approach: `This is <em>almost</em> a copy of your existing <code class="inline">search()</code> — same probing formula, same stopping condition (key found, or an empty-never-occupied slot reached) — except instead of returning a probe count, it prints each index as it goes.`,
+  changes: [
+    "Add the method inside <code class=\"inline\">openHash</code>, right next to <code class=\"inline\">search()</code>, so it shares <code class=\"inline\">probeType</code>/<code class=\"inline\">C1</code>/<code class=\"inline\">C2</code>.",
+    "Reuse the exact same index formula your <code class=\"inline\">search()</code> uses for both probe types — don't rederive it, copy it, so the sequence you print is guaranteed to match what <code class=\"inline\">search()</code> would actually visit.",
+    "Stop (and print a newline) either when the slot matches the key, or when you hit a slot that's <code class=\"inline\">!isOccupied &amp;&amp; !isDeleted</code> — same miss condition as <code class=\"inline\">search()</code>."
+  ],
+  code: [
+    { label: "Add inside class openHash — compiled and tested inline in your actual hash.cpp", lang:"cpp", body:
+`void printProbeSequence(K key){
+    long long h = (hashFunc == 1) ? Hash1(key, tableSize) : Hash2(key, tableSize);
+    long long aux = auxHash(key, tableSize);
+    for(int i = 0; i < tableSize; i++){
+        long long idx;
+        if(probeType == 1) idx = (h + i * aux) % tableSize;
+        else idx = (h + C1 * i * aux + C2 * i * i) % tableSize;
+
+        cout << idx;
+        bool isMatch = hashTable[idx].isOccupied && !hashTable[idx].isDeleted && hashTable[idx].key == key;
+        bool isEmptySlot = !hashTable[idx].isOccupied && !hashTable[idx].isDeleted;
+        if(isMatch || isEmptySlot){ cout << "\\n"; return; }
+        cout << " -> ";
+    }
+    cout << "\\n";
+}` },
+    { label: "Demo main() — insert 10000 words as usual, then read n keys and print each sequence", lang:"cpp", body:
+`int main(){
+    srand(time(0));
+    // ... build words[] and insert into dh1/dh2/cp1/cp2 exactly as in your existing main.cpp ...
+
+    int n; cin >> n;
+    for(int i = 0; i < n; i++){
+        string key; cin >> key;
+        dh1.printProbeSequence(key);   // or whichever table the question asks about
+    }
+}` }
+  ],
+  notes: ["Tested against a small table: a key with no collision printed a single index (e.g. <code class=\"inline\">39</code>); a key that probed twice before hitting an empty slot printed <code class=\"inline\">38 -> 50</code> — matches the sample's arrow format."]
+},
+{
+  id: "p6",
+  examTag: "CSE 208 Online on Hashing C1+C2 · 30 min",
+  title: "6 · Set operations (∩, ∪, −) via your hash table",
+  topic: "String & Set Applications",
+  difficulty: "Easy",
+  tested: false,
+  statement: `<p>Given Set A and Set B of integers, compute and print the intersection, union, and difference (A−B), all in expected linear time, using the hash table you already built.</p>`,
+  approach: `Build two hash sets (<code class="inline">chainHash&lt;int,bool&gt;</code>, value unused) from A and B. Every set op is then just a membership test — exactly what the toolkit's <code class="inline">contains()</code> gives you — done once per element, so it's O(|A|+|B|) overall.`,
+  changes: [
+    "Insert every element of A into <code class=\"inline\">inA</code>, every element of B into <code class=\"inline\">inB</code> — duplicates are already ignored by your existing <code class=\"inline\">insert()</code>.",
+    "Intersection: walk A's original array, keep <code class=\"inline\">x</code> where <code class=\"inline\">inB.contains(x)</code>.",
+    "Difference (A−B): walk A's original array, keep <code class=\"inline\">x</code> where <code class=\"inline\">!inB.contains(x)</code>.",
+    "Union: insert everything from A and B into one more <code class=\"inline\">chainHash</code>, then print via <code class=\"inline\">getAll()</code> — dedup is free."
+  ],
+  code: [
+    { label: "Uses only the toolkit's contains() / getAll()", lang:"cpp", body:
+`#include "hash.cpp"
+
+int main(){
+    int na; cin >> na;
+    vector<int> A(na);
+    chainHash<int,bool> inA(1);
+    for(auto& x : A){ cin >> x; inA.insert(x, true); }
+
+    int nb; cin >> nb;
+    vector<int> B(nb);
+    chainHash<int,bool> inB(1);
+    for(auto& x : B){ cin >> x; inB.insert(x, true); }
+
+    cout << "Intersection:";
+    for(int x : A) if(inB.contains(x)) cout << " " << x;
+    cout << "\\n";
+
+    chainHash<int,bool> uni(1);
+    for(int x : A) uni.insert(x, true);
+    for(int x : B) uni.insert(x, true);
+    cout << "Union:";
+    for(auto& p : uni.getAll()) cout << " " << p.first;
+    cout << "\\n";
+
+    cout << "Diff (A-B):";
+    for(int x : A) if(!inB.contains(x)) cout << " " << x;
+    cout << "\\n";
+}` }
+  ],
+  notes: ["The sheet says order doesn't matter, so no sorting needed — printing in the order each element was seen is enough, and is O(n)."]
+},
+{
+  id: "p7",
+  examTag: "CSE 208 Online 4, Section A · 20 min",
+  title: "7 · DNA reverse-complement pairs",
+  topic: "String & Set Applications",
+  difficulty: "Easy",
+  tested: true,
+  statement: `<p>Given <code class="inline">n</code> DNA sequences of length <code class="inline">l</code>, find every pair that are reverse complements of each other (A↔T, C↔G, then reversed), in O(l·n).</p>`,
+  approach: `For each sequence, compute its reverse complement and check whether that string was already seen using <code class="inline">find()</code> from the toolkit — one hash lookup per sequence keeps the whole thing at O(l·n) instead of the O(l·n²) of comparing every pair.`,
+  changes: [
+    "Build <code class=\"inline\">seen</code> as a <code class=\"inline\">chainHash&lt;string,int&gt;</code> mapping each sequence already read to its index.",
+    "For sequence <code class=\"inline\">i</code>, build its reverse complement <code class=\"inline\">rc</code> and call <code class=\"inline\">seen.find(rc, idx)</code> — if it hits, <code class=\"inline\">(words[idx], words[i])</code> is a pair, print it before inserting <code class=\"inline\">words[i]</code> itself.",
+    "Insert <code class=\"inline\">words[i]</code> into <code class=\"inline\">seen</code> only <em>after</em> the check, so a sequence never pairs with itself."
+  ],
+  code: [
+    { label: "Built on chainHash::find() — verified against both sample I/O tables", lang:"cpp", body:
+`#include "hash.cpp"
+
+string revComp(const string& s){
+    string r(s.rbegin(), s.rend());
+    for(char& c : r){
+        if(c=='A') c='T'; else if(c=='T') c='A';
+        else if(c=='C') c='G'; else if(c=='G') c='C';
+    }
+    return r;
+}
+
+int main(){
+    int n, l; cin >> n >> l;
+    vector<string> seqs(n);
+    for(auto& s : seqs) cin >> s;
+
+    chainHash<string,int> seen(1);
+    for(int i = 0; i < n; i++){
+        string rc = revComp(seqs[i]);
+        int idx;
+        if(seen.find(rc, idx)){
+            cout << seqs[idx] << " " << seqs[i] << "\\n";
+        }
+        seen.insert(seqs[i], i);
+    }
+}` }
+  ],
+  notes: ["Matched both samples exactly, including the duplicate-CTTAA case where the same pair line is printed twice — the algorithm doesn't dedupe pairs, and neither does the expected output."]
+},
+{
+  id: "p8",
+  examTag: "CSE 208 Online 4, Section B · 20 min",
+  title: "8 · k-mer frequency counting",
+  topic: "String & Set Applications",
+  difficulty: "Easy",
+  tested: true,
+  statement: `<p>Given a DNA sequence of length <code class="inline">l</code> and a window size <code class="inline">k</code>, count occurrences of every distinct length-<code class="inline">k</code> substring (k-mer), in O(k·n).</p>`,
+  approach: `Every substring extraction is O(k), and there are O(n) of them, so a single pass with a counting hash map is already O(kn) — exactly what <code class="inline">increment()</code> from the toolkit is for.`,
+  changes: [
+    "For <code class=\"inline\">i</code> from 0 to <code class=\"inline\">l-k</code>, call <code class=\"inline\">counts.increment(s.substr(i, k))</code>.",
+    "Print everything with <code class=\"inline\">counts.getAll()</code> — order doesn't matter per the sheet."
+  ],
+  code: [
+    { label: "Built on chainHash::increment() — verified against the first sample", lang:"cpp", body:
+`#include "hash.cpp"
+
+int main(){
+    int l, k; cin >> l >> k;
+    string s; cin >> s;
+
+    chainHash<string,int> counts(1);
+    for(int i = 0; i + k <= (int)s.size(); i++)
+        counts.increment(s.substr(i, k));
+
+    for(auto& p : counts.getAll())
+        cout << p.first << " " << p.second << "\\n";
+}` }
+  ],
+  notes: ["<b style=\"color:var(--hard)\">Heads up:</b> the sheet's own worked example is internally inconsistent. It lists the 10 substrings of <code class=\"inline\">ATCGATCGATCG</code> as <code class=\"inline\">ATC,TCG,CGA,GAT</code> repeated — which gives ATC:3, TCG:3, CGA:2, GAT:2 — but the sample table then prints CGA:3 and GAT:3. Compiling the definition exactly as stated (rolling k-length windows) reproduces the first sample perfectly and gives CGA:2/GAT:2 for the second, matching the sheet's own substring list rather than its output table. Don't chase the printed 3/3 — chase the definition."]
+},
+{
+  id: "p9",
+  examTag: "CSE 208 Online 4, Section C",
+  title: "9 · National citizen index (search by any of 3 fields)",
+  topic: "Multi-Key / Two-Layer Tables",
+  difficulty: "Medium",
+  tested: false,
+  statement: `<p>Store name, NID, and phone number per citizen; a single search string should match against any of the three fields and print the full record if found. Target: O(|name|+|NID|+|phone|) per operation.</p>`,
+  approach: `One record store, three independent index tables — <code class="inline">chainHash&lt;string,int&gt;</code> mapping each field's value to the record's index in a <code class="inline">vector&lt;Citizen&gt;</code>. A search is just three <code class="inline">find()</code> calls, each proportional to the length of that one string, so the total is exactly the O(|s1|+|s2|+|s3|) the sheet asks for.`,
+  changes: [
+    "Keep one <code class=\"inline\">vector&lt;Citizen&gt; records</code> holding the actual data.",
+    "Insert into all three index tables (<code class=\"inline\">byName</code>, <code class=\"inline\">byNid</code>, <code class=\"inline\">byPhone</code>) with the value being the same <code class=\"inline\">records</code> index — no data is duplicated, only pointers-by-index.",
+    "Search tries <code class=\"inline\">byName.find</code>, then <code class=\"inline\">byNid.find</code>, then <code class=\"inline\">byPhone.find</code> in order, short-circuiting on the first hit."
+  ],
+  code: [
+    { label: "Built on chainHash::find()", lang:"cpp", body:
+`#include "hash.cpp"
+
+struct Citizen { string name, nid, phone; };
+vector<Citizen> records;
+chainHash<string,int> byName(1), byNid(1), byPhone(1);
+
+void addCitizen(const string& name, const string& nid, const string& phone){
+    records.push_back({name, nid, phone});
+    int idx = records.size() - 1;
+    byName.insert(name, idx);
+    byNid.insert(nid, idx);
+    byPhone.insert(phone, idx);
+}
+
+void searchCitizen(const string& query){
+    int idx;
+    if(byName.find(query, idx) || byNid.find(query, idx) || byPhone.find(query, idx)){
+        cout << "Match Found:\\n"
+             << "Name: " << records[idx].name << "\\n"
+             << "NID no: " << records[idx].nid << "\\n"
+             << "Phone no: " << records[idx].phone << "\\n";
+    } else {
+        cout << "No match found\\n";
+    }
+}
+
+int main(){
+    int choice;
+    while(cin >> choice){
+        cin.ignore();
+        if(choice == 1){
+            string name, nid, phone;
+            cout << "Enter name: ";    getline(cin, name);
+            cout << "Enter NID no: ";  getline(cin, nid);
+            cout << "Enter phone no: "; getline(cin, phone);
+            addCitizen(name, nid, phone);
+        } else if(choice == 2){
+            string q;
+            cout << "Enter search string: ";
+            getline(cin, q);
+            searchCitizen(q);
+        }
+        cout << "Enter choice: 1. Enter Data, 2. Search Index\\n";
+    }
+}` }
+  ],
+  notes: ["Prompts follow the sheet's exact sample transcript wording — worth double-checking your lab's judge doesn't want the menu line printed <em>before</em> the first prompt instead of after each answer."]
+},
+{
+  id: "p10",
+  examTag: "CSE 208 — Hashing Online, Section B",
+  title: "10 · Position-weighted chaining, sorted by weight",
+  topic: "Chaining Internals",
+  difficulty: "Hard",
+  tested: true,
+  statement: `<p>Replace <code class="inline">Hash1</code> with a position-weighted variant: <code class="inline">Hash1(k) = (Σ i·ASCII(kᵢ)) mod 13</code> for <code class="inline">i</code> 1-indexed, N fixed at 13, no resizing. Each key also has a <code class="inline">weight = ((ASCII(first) + ASCII(last)) mod 100) / 100</code>. Insert into the chain so it stays sorted <em>descending</em> by weight, head = highest weight, ties broken by insertion order.</p>`,
+  approach: `Two changes to <code class="inline">chainHash</code>'s behaviour for this exercise only: a different <code class="inline">Hash1</code>, and <code class="inline">insert()</code> doing a sorted insertion into the <code class="inline">list</code> instead of <code class="inline">push_back</code>. Because N is fixed and there's no resizing, it's easiest to keep this as its own small class rather than bolt it onto the shared one — the weighted <code class="inline">Hash1</code> would otherwise collide with the real <code class="inline">Hash1</code> overload used by every other problem here.`,
+  changes: [
+    "New hash: <code class=\"inline\">h = Σ (i+1) * (unsigned char)k[i]</code> over 0-indexed <code class=\"inline\">i</code> (so position is 1-indexed as the formula wants), then <code class=\"inline\">% 13</code>.",
+    "<code class=\"inline\">weight(k) = ((int)(unsigned char)k.front() + (int)(unsigned char)k.back()) % 100 / 100.0</code>.",
+    "On insert: still linear-scan the chain first to reject duplicates. Then walk the list and insert <em>before</em> the first node whose weight is strictly less than the new key's weight — that's what keeps it descending and puts equal-weight ties after the existing ones (stable)."
+  ],
+  code: [
+    { label: "Standalone, tested — output matched the sheet's expected chain dump exactly", lang:"cpp", body:
+`#include <bits/stdc++.h>
+using namespace std;
+const int N = 13;
+
+int weightedHash1(const string& k){
+    long long h = 0;
+    for(int i = 0; i < (int)k.size(); i++)
+        h += (long long)(i + 1) * (unsigned char)k[i];
+    return (int)(h % N);
+}
+
+double weight(const string& k){
+    int s = ((unsigned char)k.front() + (unsigned char)k.back()) % 100;
+    return s / 100.0;
+}
+
+struct Node { string key; int value; double w; };
+
+int main(){
+    vector<list<Node>> table(N);
+    vector<string> words = {"cat","dog","bat","rat","sun","fun","run","top","pot","opt","art","tar"};
+
+    for(int i = 0; i < (int)words.size(); i++){
+        string k = words[i];
+        int h = weightedHash1(k);
+        double w = weight(k);
+
+        auto& chain = table[h];
+        bool exists = false;
+        for(auto& n : chain) if(n.key == k) exists = true;
+        if(exists) continue;
+
+        auto it = chain.begin();
+        while(it != chain.end() && it->w >= w) ++it;   // stop before first *smaller* weight
+        chain.insert(it, {k, i + 1, w});
+    }
+
+    for(int i = 0; i < N; i++){
+        if(table[i].empty()) continue;
+        cout << i << ": ";
+        bool first = true;
+        for(auto& n : table[i]){
+            if(!first) cout << " -> ";
+            cout << n.key << " (" << fixed << setprecision(2) << n.w << ")";
+            first = false;
+        }
+        cout << "\\n";
+    }
+}` }
+  ],
+  notes: ["Compiled and run on the sheet's exact 12-word input — bucket-for-bucket, chain-for-chain identical to the expected table (e.g. bucket 6: <code class=\"inline\">rat (0.30) -&gt; pot (0.28)</code>, bucket 3: <code class=\"inline\">sun (0.25) -&gt; bat (0.14) -&gt; fun (0.12)</code>)."]
+}
+];
+
+const PRACTICE = [
+{
+  title: "Rolling-hash palindrome counter",
+  topic: "String & Set Applications",
+  difficulty: "Medium",
+  statement: `<p>Given a string <code class="inline">s</code> of length up to 10⁵, count the number of distinct palindromic substrings, using hashing rather than an O(n²) expand-around-center check for the equality test.</p>`,
+  hint: `Precompute forward and reverse prefix hashes (Rabin–Karp style, same rolling idea as your <code class="inline">Hash1</code>) so any substring's forward hash and its reversed hash are both O(1) to extract. A substring is a palindrome exactly when those two hashes match. Insert each palindromic substring's hash into a <code class="inline">chainHash&lt;long long,bool&gt;</code> and use <code class="inline">contains()</code> to dedupe before counting.`
+},
+{
+  title: "Rehash triggered by average probe length",
+  topic: "Rehashing & Resizing",
+  difficulty: "Medium",
+  statement: `<p>Same double-hashing setup as problem 1, but the trigger for growing the table is different: after every insert, sample 20% of stored keys at random and compute their average probe length. If it exceeds a threshold <code class="inline">T</code> given as input, rehash to roughly double size.</p>`,
+  hint: `You already wrote the "collect all keys, shuffle, sample a percentage, average the probes" logic for problem 2's <code class="inline">avgProbe10pct()</code> — copy that pattern with a 20% sample and your own <code class="inline">search()</code> from the double-hashing table in problem 1, then feed the result into the same <code class="inline">nextSize(tableSize)</code> resize.`
+},
+{
+  title: "Sharded leaderboard — two-layer chaining, both levels",
+  topic: "Multi-Key / Two-Layer Tables",
+  difficulty: "Hard",
+  statement: `<p>Outer table keyed by <code class="inline">game_id</code> (chaining), each pointing to an inner table keyed by <code class="inline">player_id</code> storing a score (chaining). Support <code class="inline">insertScore(game, player, score)</code>, <code class="inline">getScore(game, player)</code>, and <code class="inline">topK(game, k)</code> — the k highest scores in that game.</p>`,
+  hint: `The outer level can literally be a <code class="inline">chainHash&lt;string, chainHash&lt;string,int&gt;*&gt;</code> (pointer, since chainHash isn't copy-trivial once it owns a vector of lists) using <code class="inline">find()</code>/<code class="inline">insert()</code> from the toolkit. For <code class="inline">topK</code>, pull the whole inner table out with <code class="inline">getAll()</code> and run <code class="inline">partial_sort</code> or a min-heap of size k over it — you don't need the hash table itself to stay sorted.`
+},
+{
+  title: "Longest substring with all distinct k-mers",
+  topic: "String & Set Applications",
+  difficulty: "Easy",
+  statement: `<p>Given a DNA sequence and a window size <code class="inline">k</code>, find the length of the longest contiguous run of the sequence in which every length-<code class="inline">k</code> substring inside it is distinct.</p>`,
+  hint: `Sliding window over the sequence: keep a <code class="inline">chainHash&lt;string,int&gt;</code> mapping each k-mer currently "in window" to its starting position. On seeing a repeat via <code class="inline">find()</code>, shrink the window from the left (removing k-mers with <code class="inline">remove()</code>, which you already have) until the duplicate is gone, then keep sliding — classic two-pointer, but the membership test is your hash table instead of a plain set.`
+}
+];
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function esc(s){ return s; } // reserved, content is author-controlled
+
+function renderTopicChips(){
+  const el = document.getElementById('topicChips');
+  TOPICS.forEach(t=>{
+    const c = document.createElement('div');
+    c.className = 'chip'; c.textContent = t; c.dataset.topic = t;
+    c.onclick = () => { c.classList.toggle('active'); applyFilters(); };
+    el.appendChild(c);
+  });
+}
+function renderDiffChips(){
+  const el = document.getElementById('diffChips');
+  DIFFS.forEach(d=>{
+    const c = document.createElement('div');
+    c.className = 'chip'; c.textContent = d; c.dataset.diff = d;
+    c.onclick = () => { c.classList.toggle('active'); applyFilters(); };
+    el.appendChild(c);
+  });
+}
+
+function codeBlockHTML(cb){
+  return `<div class="code-block">
+    <div class="code-label">${cb.label}</div>
+    <pre><code class="language-cpp" data-code-id="${cb._id}"></code></pre>
+  </div>`;
+}
+
+let codeRegistry = [];
+
+function renderProblems(){
+  const list = document.getElementById('problemList');
+  PROBLEMS.forEach(p=>{
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.id = p.id;
+    card.dataset.topic = p.topic;
+    card.dataset.diff = p.difficulty;
+
+    p.code.forEach(cb => { cb._id = 'code_' + Math.random().toString(36).slice(2); codeRegistry.push(cb); });
+
+    card.innerHTML = `
+      <div class="card-head">
+        <div class="card-top">
+          <div>
+            <div class="card-title">${p.title}</div>
+            <div class="exam-tag">${p.examTag}${p.tested ? ' · ✅ compiled &amp; verified' : ''}</div>
+          </div>
+          <div class="pills">
+            <span class="pill topic">${p.topic}</span>
+            <span class="pill diff-${p.difficulty}">${p.difficulty}</span>
+          </div>
+        </div>
+        <div class="statement">${p.statement}</div>
+        <div class="approach"><b>Key idea</b><br>${p.approach}</div>
+      </div>
+      <details class="sol">
+        <summary>Exact changes &amp; full code</summary>
+        <div class="sol-body">
+          <ul class="changes">${p.changes.map(c=>`<li>${c}</li>`).join('')}</ul>
+          ${p.code.map(codeBlockHTML).join('')}
+          ${p.notes && p.notes.length ? `<div class="note"><b>Note:</b> ${p.notes.join('<br><br>')}</div>` : ''}
+        </div>
+      </details>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function renderPractice(){
+  const list = document.getElementById('practiceList');
+  PRACTICE.forEach(p=>{
+    const card = document.createElement('article');
+    card.className = 'practice-card';
+    card.dataset.topic = p.topic;
+    card.dataset.diff = p.difficulty;
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-title">${p.title}</div>
+        <div class="pills">
+          <span class="pill topic">${p.topic}</span>
+          <span class="pill diff-${p.difficulty}">${p.difficulty}</span>
+        </div>
+      </div>
+      <div class="statement">${p.statement}</div>
+      <details class="hint">
+        <summary>hint</summary>
+        <div class="hint-body">${p.hint}</div>
+      </details>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function highlightAll(){
+  document.getElementById('toolkit-code').textContent = TOOLKIT_CODE;
+  codeRegistry.forEach(cb=>{
+    document.querySelector(`[data-code-id="${cb._id}"]`).textContent = cb.body;
+  });
+  document.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+}
+
+function applyFilters(){
+  const activeTopics = [...document.querySelectorAll('#topicChips .chip.active')].map(c=>c.dataset.topic);
+  const activeDiffs = [...document.querySelectorAll('#diffChips .chip.active')].map(c=>c.dataset.diff);
+  let visible = 0, total = 0;
+  document.querySelectorAll('#problemList .card, #practiceList .practice-card').forEach(card=>{
+    total++;
+    const topicOK = activeTopics.length === 0 || activeTopics.includes(card.dataset.topic);
+    const diffOK = activeDiffs.length === 0 || activeDiffs.includes(card.dataset.diff);
+    const show = topicOK && diffOK;
+    card.classList.toggle('hidden', !show);
+    if(show) visible++;
+  });
+  document.getElementById('visibleCount').textContent = `Showing ${visible} of ${total} problems`;
+}
+
+function buildBucketStrip(){
+  const strip = document.getElementById('bucketStrip');
+  const bucketCount = 13;
+  const litA = 4, litB = 7; // matches Hash1("cat")=4-style, Hash2 lands elsewhere
+  for(let i=0;i<bucketCount;i++){
+    const b = document.createElement('div');
+    b.className = 'bucket';
+    if(i===litA) b.classList.add('lit1');
+    if(i===litB) b.classList.add('lit2');
+    b.textContent = i;
+    strip.appendChild(b);
+  }
+  const labelA = document.createElement('div');
+  labelA.className = 'key-label'; labelA.style.left = (litA*34) + 'px'; labelA.textContent = '"cat"';
+  strip.appendChild(labelA);
+  const tag1 = document.createElement('div');
+  tag1.className = 'h-tag h1tag'; tag1.style.left = (litA*34 - 6) + 'px'; tag1.textContent = 'Hash1 → 4';
+  strip.appendChild(tag1);
+  const tag2 = document.createElement('div');
+  tag2.className = 'h-tag h2tag'; tag2.style.left = (litB*34 - 6) + 'px'; tag2.textContent = 'Hash2 → 7';
+  strip.appendChild(tag2);
+}
+
+renderTopicChips();
+renderDiffChips();
+renderProblems();
+renderPractice();
+highlightAll();
+applyFilters();
+buildBucketStrip();
+
+document.getElementById('expandAll').onclick = () => document.querySelectorAll('details').forEach(d=>d.open=true);
+document.getElementById('collapseAll').onclick = () => document.querySelectorAll('details.sol').forEach(d=>d.open=false);
+document.getElementById('resetFilters').onclick = () => {
+  document.querySelectorAll('.chip.active').forEach(c=>c.classList.remove('active'));
+  applyFilters();
+};
+document.getElementById('stat-solved').textContent = PROBLEMS.length;
+document.getElementById('stat-practice').textContent = PRACTICE.length;
+document.getElementById('stat-topics').textContent = TOPICS.length;
+document.getElementById('stat-tested').textContent = PROBLEMS.filter(p=>p.tested).length;
+</script>
+</body>
+</html>
