@@ -1,0 +1,243 @@
+===============================================================
+                    BINOMIAL HEAP VISUALIZER.                  
+===============================================================
+
+
+===========================================================
+                HEAP VISUALIZATION: H1
+===========================================================
+Total Elements: 11
+
+[Bit Analysis]
+  • Binary Decomposition of Size (11): 00001011_2
+  • Active Binomial Trees in Heap:
+    -> Bit 0 is SET: Exactly ONE B0 tree (1 nodes) must exist.
+    -> Bit 1 is SET: Exactly ONE B1 tree (2 nodes) must exist.
+    -> Bit 3 is SET: Exactly ONE B3 tree (8 nodes) must exist.
+  • Minimum Key in Heap: 5
+
+[Binomial Heap Visual]
+  +---------------------------------------------------------
+  | Binomial Tree B0 | Root: 50 | Capacity: 1 nodes
+  +---------------------------------------------------------
+  [50] (Root)
+
+  +---------------------------------------------------------
+  | Binomial Tree B1 | Root: 10 | Capacity: 2 nodes
+  +---------------------------------------------------------
+  [10] (Root)
+  └── [12] (deg: 0)
+
+  +---------------------------------------------------------
+  | Binomial Tree B3 | Root: 5 | Capacity: 8 nodes
+  +---------------------------------------------------------
+  [5] (Root)
+  ├── [100] (deg: 0)
+  ├── [101] (deg: 1)
+  │   └── [102] (deg: 0)
+  └── [103] (deg: 2)
+      ├── [104] (deg: 0)
+      └── [105] (deg: 1)
+          └── [106] (deg: 0)
+
+===========================================================
+
+
+===========================================================
+                HEAP VISUALIZATION: H2
+===========================================================
+Total Elements: 3
+
+[Bit Analysis]
+  • Binary Decomposition of Size (3): 00000011_2
+  • Active Binomial Trees in Heap:
+    -> Bit 0 is SET: Exactly ONE B0 tree (1 nodes) must exist.
+    -> Bit 1 is SET: Exactly ONE B1 tree (2 nodes) must exist.
+  • Minimum Key in Heap: 20
+
+[Binomial Heap Visual]
+  +---------------------------------------------------------
+  | Binomial Tree B0 | Root: 20 | Capacity: 1 nodes
+  +---------------------------------------------------------
+  [20] (Root)
+
+  +---------------------------------------------------------
+  | Binomial Tree B1 | Root: 30 | Capacity: 2 nodes
+  +---------------------------------------------------------
+  [30] (Root)
+  └── [40] (deg: 0)
+
+===========================================================
+
+
+###########################################################
+         STARTING UNION OPERATION: H1 U H2
+###########################################################
+
+>>> [STATE BEFORE UNION] <<<
+
+===========================================================
+                HEAP VISUALIZATION: H1
+===========================================================
+Total Elements: 11
+
+[Bit Analysis]
+  • Binary Decomposition of Size (11): 00001011_2
+  • Active Binomial Trees in Heap:
+    -> Bit 0 is SET: Exactly ONE B0 tree (1 nodes) must exist.
+    -> Bit 1 is SET: Exactly ONE B1 tree (2 nodes) must exist.
+    -> Bit 3 is SET: Exactly ONE B3 tree (8 nodes) must exist.
+  • Minimum Key in Heap: 5
+
+[Binomial Heap Visual]
+  +---------------------------------------------------------
+  | Binomial Tree B0 | Root: 50 | Capacity: 1 nodes
+  +---------------------------------------------------------
+  [50] (Root)
+
+  +---------------------------------------------------------
+  | Binomial Tree B1 | Root: 10 | Capacity: 2 nodes
+  +---------------------------------------------------------
+  [10] (Root)
+  └── [12] (deg: 0)
+
+  +---------------------------------------------------------
+  | Binomial Tree B3 | Root: 5 | Capacity: 8 nodes
+  +---------------------------------------------------------
+  [5] (Root)
+  ├── [100] (deg: 0)
+  ├── [101] (deg: 1)
+  │   └── [102] (deg: 0)
+  └── [103] (deg: 2)
+      ├── [104] (deg: 0)
+      └── [105] (deg: 1)
+          └── [106] (deg: 0)
+
+===========================================================
+
+
+===========================================================
+                HEAP VISUALIZATION: H2
+===========================================================
+Total Elements: 3
+
+[Bit Analysis]
+  • Binary Decomposition of Size (3): 00000011_2
+  • Active Binomial Trees in Heap:
+    -> Bit 0 is SET: Exactly ONE B0 tree (1 nodes) must exist.
+    -> Bit 1 is SET: Exactly ONE B1 tree (2 nodes) must exist.
+  • Minimum Key in Heap: 20
+
+[Binomial Heap Visual]
+  +---------------------------------------------------------
+  | Binomial Tree B0 | Root: 20 | Capacity: 1 nodes
+  +---------------------------------------------------------
+  [20] (Root)
+
+  +---------------------------------------------------------
+  | Binomial Tree B1 | Root: 30 | Capacity: 2 nodes
+  +---------------------------------------------------------
+  [30] (Root)
+  └── [40] (deg: 0)
+
+===========================================================
+
+>>> [STEP 1: INTERLEAVING ROOT LISTS] <<<
+Zippering roots of H1 and H2 by degree...
+
+--- Initial Interleaved State ---
+  Current Root Chain:
+    [B0 (Root: 50)] -> [B0 (Root: 20)] -> [B1 (Root: 10)] -> [B1 (Root: 30)] -> [B3 (Root: 5)] -> nullptr
+
+>>> [STEP 2: RESOLVING DEGREE COLLISIONS (CARRY LOGIC)] <<<
+
+================== [ITERATION 1] ==================
+ACTION: [Link Under Next Root]
+  Merging B0 (Root: 50) and B0 (Root: 20)
+  20 < 50 ==> Tree [50] linked as child of [20]
+  Formed new Tree B1 with root 20
+  +---------------------------------------------------------
+  | Binomial Tree B1 | Root: 20 | Capacity: 2 nodes
+  +---------------------------------------------------------
+  [20] (Root)
+  └── [50] (deg: 0)
+
+State after Iteration:
+  Current Root Chain:
+    [B1 (Root: 20)] -> [B1 (Root: 10)] -> [B1 (Root: 30)] -> [B3 (Root: 5)] -> nullptr
+
+================== [ITERATION 2] ==================
+ACTION: DO NOTHING [Three Consecutive Matches]
+  Three consecutive B1 trees detected. Skipping first tree to maintain degree order.
+State after Iteration:
+  Current Root Chain:
+    [B1 (Root: 20)] -> [B1 (Root: 10)] -> [B1 (Root: 30)] -> [B3 (Root: 5)] -> nullptr
+
+================== [ITERATION 3] ==================
+ACTION: [Link Under Current Root]
+  Merging B1 (Root: 10) and B1 (Root: 30)
+  10 <= 30 ==> Tree [30] linked as child of [10]
+  Formed new Tree B2 with root 10
+  +---------------------------------------------------------
+  | Binomial Tree B2 | Root: 10 | Capacity: 4 nodes
+  +---------------------------------------------------------
+  [10] (Root)
+  ├── [12] (deg: 0)
+  └── [30] (deg: 1)
+      └── [40] (deg: 0)
+
+State after Iteration:
+  Current Root Chain:
+    [B1 (Root: 20)] -> [B2 (Root: 10)] -> [B3 (Root: 5)] -> nullptr
+
+================== [ITERATION 4] ==================
+ACTION: DO NOTHING [Degree Mismatch]
+  Degrees differ (B2 != B3). Advancing sliding window.
+State after Iteration:
+  Current Root Chain:
+    [B1 (Root: 20)] -> [B2 (Root: 10)] -> [B3 (Root: 5)] -> nullptr
+
+>>> [STATE AFTER UNION FINALIZATION] <<<
+
+===========================================================
+                HEAP VISUALIZATION: H1 (Merged Result)
+===========================================================
+Total Elements: 14
+
+[Bit Analysis]
+  • Binary Decomposition of Size (14): 00001110_2
+  • Active Binomial Trees in Heap:
+    -> Bit 1 is SET: Exactly ONE B1 tree (2 nodes) must exist.
+    -> Bit 2 is SET: Exactly ONE B2 tree (4 nodes) must exist.
+    -> Bit 3 is SET: Exactly ONE B3 tree (8 nodes) must exist.
+  • Minimum Key in Heap: 5
+
+[Binomial Heap Visual]
+  +---------------------------------------------------------
+  | Binomial Tree B1 | Root: 20 | Capacity: 2 nodes
+  +---------------------------------------------------------
+  [20] (Root)
+  └── [50] (deg: 0)
+
+  +---------------------------------------------------------
+  | Binomial Tree B2 | Root: 10 | Capacity: 4 nodes
+  +---------------------------------------------------------
+  [10] (Root)
+  ├── [12] (deg: 0)
+  └── [30] (deg: 1)
+      └── [40] (deg: 0)
+
+  +---------------------------------------------------------
+  | Binomial Tree B3 | Root: 5 | Capacity: 8 nodes
+  +---------------------------------------------------------
+  [5] (Root)
+  ├── [100] (deg: 0)
+  ├── [101] (deg: 1)
+  │   └── [102] (deg: 0)
+  └── [103] (deg: 2)
+      ├── [104] (deg: 0)
+      └── [105] (deg: 1)
+          └── [106] (deg: 0)
+
+===========================================================
+
